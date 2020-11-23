@@ -20,6 +20,7 @@ import time
 
 byte_fmt_str = "!BBHBBBB"
 def send_info_req():
+    req
     pass
 
 def send_update_req():
@@ -41,6 +42,7 @@ def parse_user_input_to_bytes():
     is_device_info_req = (status == 0)
     if is_device_info_req:
         send_info_req()
+        return
 
     mode = int(input("Mode? "))
     static_mode = (mode == 0) 
@@ -66,19 +68,14 @@ def parse_user_input_to_bytes():
     msg_id = random.randint(0, 2**16)
 
     # Print the request data
-    req_data_str = \
-        f"""
-        Message Type: 0
-        Message ID: {msg_id}
-        Number of Colors {num_colors_expected}
-        Status: {status}
-        Mode: {mode}\n
-        """
-
+    print(f"Message Type: 0")
+    print(f"Message ID: {msg_id}")
+    print(f"Number of Colors: {num_colors_expected}")
+    print(f"Status: {status}")
+    print(f"Mode: {mode}")
     for i, color in enumerate(colors):
-        req_data_str += f"Color {i} RGBL: {str(color)}\n"
+        print(f"Color {i} RGBL: {str(color)}\n")
 
-    print(req_data_str)
 
     # Pack structure to be sent
     # Send bytes in the following order:
@@ -115,6 +112,3 @@ if __name__=="__main__":
     client_socket.sendto(req, (host, port))
 
     res, address = client_socket.recvfrom(4 * len(req))
-
-    
-    

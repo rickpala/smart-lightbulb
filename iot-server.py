@@ -17,22 +17,21 @@ import json
 from datetime import datetime
 import time
 
-# Status constants
-OFF = 0
-ON = 1
-
-# Mode constants
-STATIC = 0
-GRADIENT = 1
-
 class LightBulb:
     """An IoT Light bulb which supports RGBL values."""
+    # Status constants
+    OFF = 0
+    ON = 1
 
-    def __init__(self, trigger_failure=False):
+    # Mode constants
+    STATIC = 0
+    GRADIENT = 1
+
+    def __init__(self, trigger_failure=False): 
         """By default, lightbulb is On, Static, and White at full brightness."""
-        self.status = ON
-        self.mode = STATIC
-        self.colors = (255,255,255,255)
+        self.status = self.ON
+        self.mode = self.STATIC
+        self.colors = [(255,255,255,255)]
         self.failure = trigger_failure 
         self.req_ids = []
         self.error_code = 0
@@ -41,8 +40,22 @@ class LightBulb:
         """Returns a Device Info string."""
         return "CS359 IoT RGB LightBulb"
         
+    def print_current_state(self):
+        if self.status == 0:
+            status = "OFF"
+        else:
+            status = "ON"
+
+        if self.mode == 0:
+            mode = "STATIC"
+        else:
+            mode = "GRADIENT"
+
+        print(f"Lightbulb is {status} and {mode}")
+
     def update(self, status, mode, colors):
         if self.failure:
+            print("Broken Lightbulb")
             return 
 
         self.status = status
@@ -101,7 +114,7 @@ def parse_cmdline_args():
 def initialize_server_socket(host, port):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_socket.bind((host, port))
-    print("The server is ready to receive on port:  " + str(port) + "\n")
+    print("The server is ready to receive on port:  " + str(port))
     return server_socket
 
 
@@ -112,12 +125,13 @@ if __name__=="__main__":
 
     # loop forever listening for incoming UDP messages
     while True:
+        lightbulb.print_current_state()
+
         # recv message
         offset = 8
         buffer, client_addr = server_socket.recvfrom(1024)
         msg_type, err_num, msg_id, num_colors, err_num, status, mode \
             = struct.unpack("!2B H 4B", buffer[:offset])
-
         colors = []
         i = 0
         while len(colors) < num_colors:
