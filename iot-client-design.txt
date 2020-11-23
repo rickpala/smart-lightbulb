@@ -1,0 +1,11 @@
+main():
+    host, port = parse_cmdline_args()
+
+    parse_cmdline_args
+    ask_user_for_input
+    package_as_bytes
+    send()
+    recv_ack()
+    end
+
+    

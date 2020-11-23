@@ -1,0 +1,48 @@
+LightBulb Object:
+    init():
+        - status [0 Off, 1 On]
+        - mode [0 Static, 1 Gradient]
+        - colors [List of 4-Tuples]
+        - failure [Bool=False]
+
+    repr for Device Info Request
+    Update Color
+    Update Status (On/Off)
+    Update Mode (Static/Gradient)
+
+
+main():
+    parse_cmdline_args()
+    init_server()
+    while True:
+        recv_message()
+
+        if lightbulb.failure:
+            print("lightbulb machine broke")
+        
+        if status != lightbulb.status:
+            lightbulb.update_status(status)
+        
+        if mode != lightbulb.mode:
+            lightbulb.update_mode(mode)
+        
+        if mode = static:
+            send 1 color to LightBulb
+
+        if mode = gradient:
+            send 2 colors to LightBulb
+
+
+        ack back to the client
+        send(
+            msg_type,
+            msg_id,
+            num_colors,
+            status,
+            mode,
+            color 1,
+            color 2
+        ) # client will print response
+
+
+
