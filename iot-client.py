@@ -39,67 +39,82 @@ def init_client_socket():
 if __name__=="__main__":
     host, port = parse_cmdline_args()
     client_socket = init_client_socket()
-    print(f"Sending request to {host}, {port}")
 
     msg_type = 0
     err_num = 0
+    num_colors_expected = 0
+    mode = 0
+    colors = []
     msg_id = random.randint(0, 2**16)
 
-    # Ask for status
+    # Ask for status [0 DevInfoReq, 1 On]
     status = int(input("Status? "))
     is_device_info_req = (status == 0)
+
     if is_device_info_req:
-        return dev_info_req_to_bytes(msg_id)
-
-    mode = int(input("Mode? "))
-    static_mode = (mode == 0) 
-    gradient_mode = (mode == 1)
-    
-    if static_mode:
-        num_colors_expected = 1
-    elif gradient_mode:
-        num_colors_expected = 2
+        req = dev_info_req_to_bytes(msg_id)
     else:
-        # Throw MODE_UNSUPPORTED_ERROR
-        pass
+        # Ask user for mode [0 Static, 1 Gradient]
+        mode = int(input("Mode? "))
+        static_mode = (mode == 0) 
+        gradient_mode = (mode == 1)
+        if static_mode:
+            num_colors_expected = 1
+        elif gradient_mode:
+            num_colors_expected = 2
 
-    colors = []
-    while len(colors) < num_colors_expected:
-        color = input(f"Color {len(colors)} (R,G,B,L):")
-        color_tpl = eval(color)
+        colors = []
+        while len(colors) < num_colors_expected:
+            color = input(f"Color {len(colors)} (R,G,B,L):")
+            color_tpl = eval(color)
 
-        colors.append(color_tpl)        
+            colors.append(color_tpl)        
+
+        # Pack request 
+        req  = bytes()
+        req += struct.pack(
+            "!2B H 4B", msg_type, err_num, msg_id, num_colors_expected, 0, status, mode)
+        for color in colors:
+            r, g, b, l = color
+            req += struct.pack("!4B", r,g,b,l)
 
     # Print the request data
-    print(f"Message Type: 0")
-    print(f"Message ID: {msg_id}")
-    print(f"Number of Colors: {num_colors_expected}")
-    print(f"Status: {status}")
-    print(f"Mode: {mode}")
+    req_str = ""
+    req_str += f"Sending request to {host}, {port}\n"
+    req_str += f"Message Type: 0\n"
+    req_str += f"Message ID: {msg_id}\n"
+    req_str += f"Number of Colors: {num_colors_expected}\n"
+    req_str += f"Status: {status}\n"
+    req_str += f"Mode: {mode}\n"
     for i, color in enumerate(colors):
-        print(f"Color {i} RGBL: {str(color)}\n")
-
-    # Pack structure to be sent
-    # Send bytes in the following order:
-    # - B Message Type
-    # - B Error Number
-    # - H Message ID
-    # - B Number of Colors
-    # - x Pad Byte
-    # - B Status
-    # - B Mode
-    # - 4B * N RGBL Values (1B Each)
-
-    buf  = bytes()
-    buf += struct.pack(
-        "!2B H 4B", msg_type, err_num, msg_id, num_colors_expected, 0, status, mode)
-
-    for color in colors:
-        r, g, b, l = color
-        buf += struct.pack("!4B", r,g,b,l)
-
-
+        req_str += f"Color {i} RGBL: {str(color)}\n"
+    print(req_str)
+    print()
+    
     client_socket.sendto(req, (host, port))
 
-    res, address = client_socket.recvfrom(4 * len(req))
-
+    # Unpack and receive response 
+    buffer, address = client_socket.recvfrom(4 * len(req))
+    offset = 8
+    print(f"Received response from {address}")
+    print(f"Buffer size: {len(buffer)}")
+    fmt_string = "!BB H BBBB"
+    msg_type, err_num, msg_id, num_colors, pad, status, mode = \
+        struct.unpack(fmt_string, buffer[:offset]) 
+    res_str = ""
+    res_str += f"Error Number: {err_num}\n"
+    res_str += f"Message Type: {msg_type}\n"
+    res_str += f"Message ID: {msg_id}\n"
+    res_str += f"Number of colors: {num_colors}\n"
+    res_str += f"Status: {status}\n"
+    res_str += f"Mode: {mode}\n"
+    if not is_device_info_req:
+        offset = 8
+        colors = []
+        i = 0
+        while len(colors) < num_colors:
+            color = struct.unpack_from("!4B", buffer, offset + 4*i)
+            colors.append(color)
+            res_str += f"Color {i} RGBL: {color}\n"
+            i += 1
+    print(res_str)
