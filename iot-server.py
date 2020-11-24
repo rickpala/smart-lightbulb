@@ -41,6 +41,7 @@ class LightBulb:
         return "CS359 IoT RGB LightBulb"
         
     def print_current_state(self):
+        """Prints a human-readable version of the current state of the lightbulb."""
         if self.status == 0:
             status = "OFF"
         else:
@@ -51,9 +52,10 @@ class LightBulb:
         else:
             mode = "GRADIENT"
 
-        print(f"Lightbulb is {status} and {mode}")
+        print(f"Lightbulb is {status} and {mode} at {self.colors}")
 
     def update(self, status, mode, colors):
+        """Update the status, mode, and color(s) of the bulb."""
         if self.failure:
             print("Broken Lightbulb")
             return 
@@ -97,8 +99,8 @@ class LightBulb:
 
         # Append Model/Version Number, and Human-readable description
         desc = str(self) 
-        buffer  = self.headers_to_bytes 
-        buffer += struct.pack(f"!HHI {len(desc)}S", 1, 1, len(desc), desc)
+        buffer = self.headers_to_bytes() 
+        buffer += struct.pack(f"!HHI {len(desc)}s", 1, 1, len(desc), desc.encode())
         return buffer
 
 def parse_cmdline_args():
@@ -116,7 +118,6 @@ def initialize_server_socket(host, port):
     server_socket.bind((host, port))
     print("The server is ready to receive on port:  " + str(port))
     return server_socket
-
 
 if __name__=="__main__":
     (host, port) = parse_cmdline_args()
