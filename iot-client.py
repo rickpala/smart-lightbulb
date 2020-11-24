@@ -17,14 +17,9 @@ import json
 from datetime import datetime
 import time
 
-
 byte_fmt_str = "!BBHBBBB"
-def send_info_req():
-    req
-    pass
-
-def send_update_req():
-    pass
+def dev_info_req_to_bytes(msg_id):
+    return struct.pack("!2B H 4B", 0, 0, msg_id, 0, 0, 0, 0) 
 
 def parse_cmdline_args():
     if len(sys.argv) == 3:
@@ -36,13 +31,25 @@ def parse_cmdline_args():
 
     return host, port
 
-def parse_user_input_to_bytes():
+def init_client_socket():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(1.0)
+    return sock
+
+if __name__=="__main__":
+    host, port = parse_cmdline_args()
+    client_socket = init_client_socket()
+    print(f"Sending request to {host}, {port}")
+
+    msg_type = 0
+    err_num = 0
+    msg_id = random.randint(0, 2**16)
+
     # Ask for status
     status = int(input("Status? "))
     is_device_info_req = (status == 0)
     if is_device_info_req:
-        send_info_req()
-        return
+        return dev_info_req_to_bytes(msg_id)
 
     mode = int(input("Mode? "))
     static_mode = (mode == 0) 
@@ -63,10 +70,6 @@ def parse_user_input_to_bytes():
 
         colors.append(color_tpl)        
 
-    msg_type = 0
-    err_num = 0
-    msg_id = random.randint(0, 2**16)
-
     # Print the request data
     print(f"Message Type: 0")
     print(f"Message ID: {msg_id}")
@@ -75,7 +78,6 @@ def parse_user_input_to_bytes():
     print(f"Mode: {mode}")
     for i, color in enumerate(colors):
         print(f"Color {i} RGBL: {str(color)}\n")
-
 
     # Pack structure to be sent
     # Send bytes in the following order:
@@ -96,19 +98,8 @@ def parse_user_input_to_bytes():
         r, g, b, l = color
         buf += struct.pack("!4B", r,g,b,l)
 
-    return buf
-
-def init_client_socket():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.settimeout(1.0)
-    return sock
-
-if __name__=="__main__":
-    host, port = parse_cmdline_args()
-    client_socket = init_client_socket()
-    print(f"Sending request to {host}, {port}")
-    req = parse_user_input_to_bytes()
 
     client_socket.sendto(req, (host, port))
 
     res, address = client_socket.recvfrom(4 * len(req))
+
