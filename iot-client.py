@@ -21,11 +21,15 @@ def turn_off_req_to_bytes(msg_id):
 
 def parse_cmdline_args():
     if len(sys.argv) == 3:
-        host = sys.argv[1]
-        port = int(sys.argv[2])
-    else:
-        print("Bad cmd-line arguments.")
-        quit()
+        try:
+            host = sys.argv[1]
+            port = int(sys.argv[2])
+            return host, port
+        except: 
+            pass
+
+    host = "127.0.0.1"
+    port = 12000
 
     return host, port
 
@@ -56,6 +60,14 @@ def build_res_str(msg_type, err_num, msg_id, num_colors, pad, status, mode):
     res_str += f"Status: {status}\n"
     res_str += f"Mode: {mode}\n"
     return res_str
+
+def valid_color(color):
+    bad_count = 0
+    for val in color:
+        if val < 40:
+            bad_count += 1
+
+    return bad_count < len(color)
 
 if __name__=="__main__":
     host, port = parse_cmdline_args()
@@ -91,10 +103,14 @@ if __name__=="__main__":
             print("Mode Error")
             quit()
 
+        # Ask user for color(s)
         colors = []
         while len(colors) < num_colors_expected:
             color = input(f"Color {len(colors)} (R,G,B,L): ")
             color_tpl = eval(color)
+            if not valid_color(color_tpl):
+                print("Color Error")
+                quit() 
             colors.append(color_tpl)        
 
         # Pack request 
@@ -115,10 +131,9 @@ if __name__=="__main__":
     client_socket.sendto(req, (host, port))
 
     # Unpack and receive response 
-    buffer, address = client_socket.recvfrom(4 * len(req))
+    buffer, address = client_socket.recvfrom(1024)
     offset = 8
     print(f"Received response from {address}")
-    print(f"Buffer size: {len(buffer)}")
     fmt_string = "!BB H BBBB"
     msg_type, err_num, msg_id, num_colors, pad, status, mode = \
         struct.unpack(fmt_string, buffer[:offset]) 
@@ -133,4 +148,12 @@ if __name__=="__main__":
             colors.append(color)
             res_str += f"Color {i} RGBL: {color}\n"
             i += 1
+    else:
+        model, version, desc_len = struct.unpack("!HHI", buffer[offset:offset+2+2+4])
+        desc = struct.unpack(f"!{desc_len}s", buffer[16:])[0]
+        desc = desc.decode()
+        res_str += f"Model: {model}\n"
+        res_str += f"Version: {version}\n"
+        res_str += f"Device Info: {desc}\n"
+
     print(res_str)

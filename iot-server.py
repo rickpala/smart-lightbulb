@@ -100,13 +100,17 @@ class LightBulb:
 
 def parse_cmdline_args():
     if len(sys.argv) == 3:
-        host = sys.argv[1]
-        port = int(sys.argv[2])
-    else:
-        print("Bad cmd-line arguments.")
-        quit()
+        try:
+            host = sys.argv[1]
+            port = int(sys.argv[2])
+            return host, port
+        except: 
+            pass
 
-    return (host, port)
+    host = "127.0.0.1"
+    port = 12000
+
+    return host, port
 
 def initialize_server_socket(host, port):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -117,7 +121,7 @@ def initialize_server_socket(host, port):
 if __name__=="__main__":
     (host, port) = parse_cmdline_args()
     server_socket = initialize_server_socket(host, port)
-    lightbulb = LightBulb()
+    lightbulb = LightBulb() # Pass "True" into constructor to trigger failure
 
     # loop forever listening for incoming UDP messages
     while True:
