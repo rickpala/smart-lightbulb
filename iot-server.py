@@ -1,9 +1,4 @@
 #!/usr/local/bin/python3
-
-# Ricky Palaguachi
-# rsp84
-# CS 356 - 007
-
 # iot-server.py
 
 import sys
@@ -147,10 +142,9 @@ if __name__=="__main__":
         if device_info_req:
             res = lightbulb.dev_info_to_bytes()
         else:
+            status -= 1 # Device Info Request offsets On/Off values by 1
             lightbulb.update(status, mode, colors)
             res = lightbulb.headers_to_bytes()
 
         # send response
         server_socket.sendto(res, client_addr)
-
-        
