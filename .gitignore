@@ -1,5 +1,7 @@
-*.pdf
 *.doc
 *.docx
 
 .vscode
+
+grading
+*.pcap

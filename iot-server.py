@@ -93,6 +93,10 @@ class LightBulb:
         # - S String with device Information
 
         # Append Model/Version Number, and Human-readable description
+        if self.failure:
+            print("Broken Bulb")
+            quit()
+            
         desc = str(self) 
         buffer = self.headers_to_bytes() 
         buffer += struct.pack(f"!HHI {len(desc)}s", 1, 1, len(desc), desc.encode())
@@ -121,7 +125,7 @@ def initialize_server_socket(host, port):
 if __name__=="__main__":
     (host, port) = parse_cmdline_args()
     server_socket = initialize_server_socket(host, port)
-    lightbulb = LightBulb() # Pass "True" into constructor to trigger failure
+    lightbulb = LightBulb(True) # Pass "True" into constructor to trigger failure
 
     # loop forever listening for incoming UDP messages
     while True:
